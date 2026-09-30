@@ -1,0 +1,13 @@
+server:
+  shutdown: immediate
+
+app:
+  kafka:
+    post-published-topic: blog.post-published
+  jwt:
+    private-key: classpath:certs/private.pem
+    public-key: classpath:certs/public.pem
+
+logging:
+  level:
+    org.springframework.security: DEBUG

@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://blog-db:5432/postgres
+    username: postgres
+  data:
+    redis:
+      host: redis
+      port: 6379
+  kafka:
+    bootstrap-servers: kafka:9092
+  mail:
+    host: mailpit
+
+management:
+  otlp:
+    metrics:
+      export:
+        url: http://otel-lgtm:4318/v1/metrics
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: http://otel-lgtm:4318/v1/traces
+    logging:
+      export:
+        otlp:
+          endpoint: http://otel-lgtm:4318/v1/logs

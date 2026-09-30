@@ -1,0 +1,59 @@
+package com.example.blog.post.domain;
+
+import com.example.blog.post.domain.model.PostDto;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+interface PostRepository extends JpaRepository<Post, Long> {
+
+    @Query("""
+        select new com.example.blog.post.domain.model.PostDto(p.id, p.title, p.slug, p.content, c.slug, c.name, p.createdBy, u.name, p.createdAt, p.updatedAt)
+        from Post p join User u on p.createdBy = u.id join Category c on p.categoryId = c.id
+        where p.slug = :slug
+    """)
+    Optional<PostDto> findBySlug(@Param("slug") String slug);
+
+    Optional<Post> findEntityBySlug(String slug);
+
+    @Query("""
+        select new com.example.blog.post.domain.model.PostDto(p.id, p.title, p.slug, p.content, c.slug, c.name, p.createdBy, u.name, p.createdAt, p.updatedAt)
+        from Post p join User u on p.createdBy = u.id join Category c on p.categoryId = c.id
+    """)
+    Page<PostDto> findPosts(Pageable pageable);
+
+    @Query(value = """
+                    select p.id as "id",
+                           p.title as "title",
+                           p.slug as "slug",
+                           p.content as "content",
+                           c.slug as "categorySlug",
+                           c.name as "categoryName",
+                           p.created_by as "authorId",
+                           u.name as "authorName",
+                           p.created_at as "createdAt",
+                           p.updated_at as "updatedAt"
+                    from post p
+                    join "user" u on p.created_by = u.id
+                    join category c on p.category_id = c.id
+                    where p.search_vector @@ websearch_to_tsquery('simple', :query)
+                    order by p.created_at desc, p.id desc
+                    """, countQuery = """
+                    select count(*)
+                    from post p
+                    where p.search_vector @@ websearch_to_tsquery('simple', :query)
+                    """, nativeQuery = true)
+    Page<PostSearchProjection> searchPosts(@Param("query") String query, Pageable pageable);
+
+    @Query("""
+        select new com.example.blog.post.domain.model.PostDto(p.id, p.title, p.slug, p.content, c.slug, c.name, p.createdBy, u.name, p.createdAt, p.updatedAt)
+        from Post p join User u on p.createdBy = u.id join Category c on p.categoryId = c.id
+        where p.createdAt >= :start and p.createdAt <= :end
+    """)
+    List<PostDto> findByCreatedDate(@Param("start") Instant start, @Param("end") Instant end, Pageable pageable);
+}

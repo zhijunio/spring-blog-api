@@ -1,0 +1,184 @@
+spring:
+  application:
+    name: spring-blog-api
+  docker:
+    compose:
+      lifecycle-management: start_and_stop
+  mvc:
+    apiversion:
+      default: 1.0
+      use:
+        header: API_VERSION
+      supported: 1.0
+  web:
+    locale: en
+    locale-resolver: accept-header
+  threads:
+    virtual:
+      enabled: true
+  messages:
+    basename: messages
+    fallback-to-system-locale: false
+  task:
+    execution:
+      thread-name-prefix: blog-async-
+      shutdown:
+        await-termination: true
+        await-termination-period: 30s
+  datasource:
+    url: "${DB_URL:jdbc:postgresql://localhost:5432/postgres}"
+    username: "${DB_USERNAME:postgres}"
+    password: "${DB_PASSWORD:postgres}"
+    hikari:
+      auto-commit: false
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 15
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+        query:
+          fail_on_pagination_over_collection_fetch: true
+  cache:
+    type: redis
+    cache-names: categories,categoriesBySlug
+    redis:
+      time-to-live: 10m
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: 'spring-blog-api::'
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      repositories:
+        enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: blog-email-notification
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.example.blog.post.domain.model
+    listener:
+      ack-mode: record
+  mail:
+    host: 127.0.0.1
+    port: 1025
+    protocol: smtp
+    username: ''
+    password: ''
+    properties:
+      mail:
+        transport:
+          protocol: smtp
+        smtps:
+          auth: true
+          starttls:
+            enable: true
+          timeout: 2000
+  modulith:
+    events:
+      jdbc:
+        schema-initialization:
+          enabled: true
+      completion-mode: update
+      republish-outstanding-events-on-restart: true
+
+server:
+  port: 8080
+  compression:
+    enabled: true
+  http2:
+    enabled: true
+
+app:
+  email-service-type: console
+  kafka:
+    post-published-topic: blog.post-published
+  support-email: support@example.com
+  page-size: 5
+  time-zone: Asia/Shanghai
+  newsletter-batch-size: 100
+  newsletter-job-cron: 0 0 9 * * 6
+  public-base-url: http://localhost:8080
+  cors:
+    path-pattern: /api/**
+    allowed-origins: http://localhost:3000
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type
+  openapi:
+    title: Blog API
+    description: Blog API Swagger Documentation
+    version: v1.0.0
+    contact:
+      name: example
+      email: support@example.com
+  jwt:
+    issuer: example
+    expires-in-seconds: 604800
+    private-key: classpath:certs/private.pem
+    public-key: classpath:certs/public.pem
+
+logging:
+  level:
+    root: INFO
+    com.example: INFO
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  include-application-name: false
+
+bootui:
+  enabled: false
+  mcp:
+    enabled: false
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  paths-to-match: /api/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  otlp:
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/metrics
+        step: 30s
+  opentelemetry:
+    resource-attributes:
+      service.name: ${spring.application.name}
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/traces
+          compression: gzip
+    logging:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/logs
+          compression: gzip
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized

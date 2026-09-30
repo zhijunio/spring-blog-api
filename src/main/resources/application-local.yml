@@ -1,0 +1,27 @@
+spring:
+  main:
+    lazy-initialization: true
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        generate_statistics: true
+        log_slow_query: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    enabled: true
+
+bootui:
+  enabled: true
+  mcp:
+    enabled: true
